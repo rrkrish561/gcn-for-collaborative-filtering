@@ -16,6 +16,7 @@ class NCF(nn.Module):
         self.lin2 = nn.Linear(hidden_dim1, hidden_dim2)
         self.rel2 = nn.ReLU(hidden_dim2)
         self.outp = nn.Linear(hidden_dim2, 1)
+        self.sig = nn.Sigmoid()
         
     def forward(self, user, item):
         user = self.user_embedding(user)
@@ -27,5 +28,6 @@ class NCF(nn.Module):
         x = self.lin2(x)
         x = self.rel2(x)
         x = self.outp(x)
+        x = self.sig(x)
         return x
     
