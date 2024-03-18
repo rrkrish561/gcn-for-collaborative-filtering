@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 class EpinionsDataset(Dataset):
     def __init__(self, data_path, max_lines=200000):
         # Initialize dataframe
-        self.data = pd.DataFrame(columns=['user', 'item', 'rating'])
+        self.data = pd.DataFrame(columns=['user', 'item', 'time'])
 
 
         items = set()
@@ -22,16 +22,22 @@ class EpinionsDataset(Dataset):
                     continue
 
                 line = line.strip().split()
-                
-                user = line[1]
-                item = line[0]
-                
+
                 # Ignore if line is not of length 5
                 if len(line) < 5:
                     continue
 
+                # If the rating is less than 3, ignore
+                print(line[4])
+                if float(line[4]) < 3:
+                    continue
+                
+                user = line[1]
+                item = line[0]
+                rating_time = line[3]
+
                 # Add data to dataframe
-                self.data.loc[len(self.data)] = [item, user, line[4]]
+                self.data.loc[len(self.data)] = [item, user, rating_time]
 
                 # Add user and item to set
                 items.add(item)
@@ -49,8 +55,6 @@ class EpinionsDataset(Dataset):
                 if i >= max_lines:
                     break
 
-
-
         # close file
         f.close()
                 
@@ -60,21 +64,18 @@ class EpinionsDataset(Dataset):
         print('Number of users:', len(users))
         print('Number of items:', len(items))
 
-        # Make one-hot encodings for users and items
-        self.user_encodings = pd.get_dummies(self.data['user'])
-        self.item_encodings = pd.get_dummies(self.data['item'])
+        # Group data by user and sort by time
+        self.data = self.data.sort_values(by=['user', 'time'])
 
-        self.dataset = pd.DataFrame(columns=['user', 'item', 'is_rated'])
-
-        # For each user,  item pair, add 1 if user has rated item, 0 otherwise
-        print("Total num of pairs:", len(users) * len(items))
-        
+        # For each user, remove latest entry and add to test set
+        self.test_data = pd.DataFrame(columns=['user', 'item', 'time', 'rating'])
         for user in users:
-            for item in items:
-                if item in users_to_items[user]:
-                    self.dataset.loc[len(self.dataset)] = [user, item, 1]
-                else:
-                    self.dataset.loc[len(self.dataset)] = [user, item, 0]
+            user_data = self.data[self.data['user'] == user]
+            self.test_data = self.test_data.append(user_data.iloc[-1])
+            self.data = self.data.drop(user_data.index[-1])
+        
+        print('Train data:', len(self.data))
+        print('Test data:', len(self.test_data))
 
 
     def __len__(self):
