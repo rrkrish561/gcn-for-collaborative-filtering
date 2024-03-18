@@ -1,9 +1,7 @@
-from epinions_dataset import EpinionsDataset
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
-class NCF:
+class NCF(nn.Module):
     """
     Neural Collaborative Filtering architecture
     """
@@ -13,9 +11,11 @@ class NCF:
         self.user_embedding = nn.Linear(user_input_dim, embedding_dim)
         self.item_embedding = nn.Linear(item_input_dim, embedding_dim)
 
-        self.lin1 = nn.Linear(embedding_dim, hidden_dim1)
+        self.lin1 = nn.Linear(2*embedding_dim, hidden_dim1)
         self.rel1 = nn.ReLU(hidden_dim1)
         self.lin2 = nn.Linear(hidden_dim1, hidden_dim2)
+        self.rel2 = nn.ReLU(hidden_dim2)
+        self.outp = nn.Linear(hidden_dim2, 1)
         
     def forward(self, user, item):
         user = self.user_embedding(user)
@@ -25,5 +25,7 @@ class NCF:
         x = self.lin1(x)
         x = self.rel1(x)
         x = self.lin2(x)
+        x = self.rel2(x)
+        x = self.outp(x)
         return x
     

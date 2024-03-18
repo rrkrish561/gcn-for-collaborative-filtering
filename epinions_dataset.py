@@ -37,8 +37,8 @@ class EpinionsDataset(Dataset):
         item_one_hot = [0] * self.num_items
         item_one_hot[item_idx] = 1
 
-        user_one_hot = torch.tensor(user_one_hot)
-        item_one_hot = torch.tensor(item_one_hot)
+        user_one_hot = torch.FloatTensor(user_one_hot)
+        item_one_hot = torch.FloatTensor(item_one_hot)
 
         return user_one_hot, item_one_hot, label
         
