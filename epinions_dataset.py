@@ -12,13 +12,16 @@ class EpinionsDataset(Dataset):
 
         self.num_users = len(self.user_to_items)
         self.num_items = len(self.items)
-        print('Number of users:', self.num_users)
-        print('Number of items:', self.num_items)
+
+        items_list = list(enumerate(self.items))
+        users_list = list(enumerate(self.user_to_items.keys()))
 
         # Map items to indices
-        self.item_to_index = {item: i for i, item in enumerate(self.items)}
+        self.item_to_index = {item: i for i, item in items_list}
+        self.index_to_items = {i: item for i, item in items_list}
         # Map users to indices
-        self.user_to_index = {user: i for i, user in enumerate(self.user_to_items.keys())}
+        self.user_to_index = {user: i for i, user in users_list}
+        self.index_to_user = {i: user for i, user in users_list}
 
     def __len__(self):
         return len(self.data)
@@ -41,4 +44,14 @@ class EpinionsDataset(Dataset):
         item_one_hot = torch.FloatTensor(item_one_hot)
 
         return user_one_hot, item_one_hot, label
+    
+    def item_to_one_hot(self, item):
+        item_idx = self.item_to_index[item]
+        item_one_hot = [0] * self.num_items
+        item_one_hot[item_idx] = 1
+        return torch.FloatTensor(item_one_hot)
+    
+    def one_hot_to_user(self, one_hot):
+        index = torch.argmax(one_hot).item()
+        return self.index_to_user[index]
         
