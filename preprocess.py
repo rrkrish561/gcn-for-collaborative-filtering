@@ -5,10 +5,6 @@ import pickle
 def preprocess(data_path, rating_minimum=10, max_lines=None):
     data = pd.DataFrame(columns=['user', 'item', 'time', 'label'])
 
-    user_to_item = {}
-    users = set()
-    items = set()
-
     with open(data_path, 'r', encoding="unicode-escape") as f:
         i = 0
         for line in f:
@@ -37,13 +33,6 @@ def preprocess(data_path, rating_minimum=10, max_lines=None):
                 continue
 
             data.loc[len(data)] = [user, item, int(rating_time), 1]
-            users.add(user)
-            items.add(item)
-            if user not in user_to_item:
-                user_to_item[user] = set()
-                user_to_item[user].add(item)
-            else:
-                user_to_item[user].add(item)
 
             i += 1
             if i % 10000 == 0:
@@ -61,6 +50,23 @@ def preprocess(data_path, rating_minimum=10, max_lines=None):
     # Count number of users and items
     n_users = len(data['user'].unique())
     n_items = len(data['item'].unique())
+
+    # Map users to items
+    user_to_item = {}
+    items = set()
+    for index, row in data.iterrows():
+        user = row['user']
+        item = row['item']
+        items.add(item)
+        if user not in user_to_item:
+            user_to_item[user] = set()
+        user_to_item[user].add(item)
+
+    # Save user_to_item and items
+    with open('data/user_to_item.pkl', 'wb') as f:
+        pickle.dump(user_to_item, f)
+    with open('data/items.pkl', 'wb') as f:
+        pickle.dump(items, f)
 
     print('Number of users:', n_users)
     print('Number of items:', n_items)
@@ -102,12 +108,7 @@ def preprocess(data_path, rating_minimum=10, max_lines=None):
     print(train.head(20))
 
     # Save test set and train set
-    test.to_csv('test.csv', index=False)
-    train.to_csv('train.csv', index=False)
+    test.to_csv('data/test.csv', index=False)
+    train.to_csv('data/train.csv', index=False)
 
-    # pickle set of items and user to items
-    with open('items.pkl', 'wb') as f:
-        pickle.dump(items, f)
-
-    with open('user_to_item.pkl', 'wb') as f:
-        pickle.dump(user_to_item, f)
+   
