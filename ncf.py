@@ -6,7 +6,6 @@ class NCF:
     """
     Neural Collaborative Filtering architecture
     """
-<<<<<<< Updated upstream
     def __init__(self, input_dim, hidden_dim1, hidden_dim2):
         super().__init__()
 
@@ -20,10 +19,3 @@ class NCF:
         x = self.lin2(x)
         return x
     
-=======
-
-    def __init__(self, latent_size, num_layers, ) -> None:
-        self.latent_size = latent_size
-        self.num_layers = num_layers
-        
->>>>>>> Stashed changes
