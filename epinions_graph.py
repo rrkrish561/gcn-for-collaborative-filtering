@@ -3,7 +3,7 @@ Initializes the graph of the Epinions dataset.
 '''
 
 import pandas as pd
-from torch_geometric.data import Data
+from torch_geometric.transforms import ToUndirected
 from torch_geometric.data import HeteroData
 import pickle
 import torch
@@ -68,5 +68,8 @@ edge_index, edge_label = load_edge_csv('data/train.csv',
 data = HeteroData()
 data['user', 'rates', 'item'].edge_index = edge_index
 data['user', 'rates', 'item'].edge_label = edge_label
+
+# Add a reverse edge for user aggregration/item modeling
+data = ToUndirected()(data)
 
 print(data)
