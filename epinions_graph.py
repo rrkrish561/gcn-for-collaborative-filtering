@@ -9,16 +9,11 @@ import pickle
 import torch
 
 train_data = pd.read_csv('data/train.csv')
+train_idx = len(train_data)
+test_data = pd.read_csv('data/test.csv')
+all_data = pd.read_csv('data/all_data.csv')
 
-print(train_data.head())
-
-# Get user to items dictionary from pickle file
-with open('data/user_to_item.pkl', 'rb') as f:
-    user_to_items = pickle.load(f)
-
-# Get items set from pickle file
-with open('data/items.pkl', 'rb') as f:
-    items_set = pickle.load(f)
+print(all_data.head())
 
 def load_node_csv(path, index_col, encoders=None):
     data = pd.read_csv(path, index_col=index_col)
@@ -53,11 +48,11 @@ class IdentityEncoder:
         return torch.from_numpy(df.values).view(-1, 1).to(self.dtype)
     
 # Return node features and mapping from user/item to index
-_, user_mapping = load_node_csv('data/train.csv', index_col='user')
-_, item_mapping = load_node_csv('data/train.csv', index_col='item')
+_, user_mapping = load_node_csv('data/all_data.csv', index_col='user')
+_, item_mapping = load_node_csv('data/all_data.csv', index_col='item')
 
 # Return edge index and edge attributes
-edge_index, edge_label = load_edge_csv('data/train.csv', 
+edge_index, edge_label = load_edge_csv('data/all_data.csv', 
                                       src_index_col='user', 
                                       src_mapping=user_mapping, 
                                       dst_index_col='item', 
@@ -66,10 +61,30 @@ edge_index, edge_label = load_edge_csv('data/train.csv',
     
 
 data = HeteroData()
+# data['user'].x = torch.eye(len(user_mapping))
+# data['item'].x = torch.eye(len(item_mapping))
+data['user'].x = torch.arange(len(user_mapping))
+data['item'].x = torch.arange(len(item_mapping))
 data['user', 'rates', 'item'].edge_index = edge_index
 data['user', 'rates', 'item'].edge_label = edge_label
 
+train_data = data.clone()
+test_data = data.clone()
+
+train_data['user', 'rates','item'].edge_index = data['user', 'rates', 'item'].edge_index[:, :train_idx]
+train_data['user', 'rates','item'].edge_label = data['user', 'rates', 'item'].edge_label[:train_idx]
+train_data['user', 'rates', 'item'].edge_label_index = data['user', 'rates', 'item'].edge_index[:, :train_idx]
+
+test_data['user', 'rates','item'].edge_index = data['user', 'rates', 'item'].edge_index[:, :train_idx]
+test_data['user', 'rates','item'].edge_label = data['user', 'rates', 'item'].edge_label[train_idx:]
+test_data['user', 'rates', 'item'].edge_label_index = data['user', 'rates', 'item'].edge_index[:, train_idx:]
+
 # Add a reverse edge for user aggregration/item modeling
-data = ToUndirected()(data)
+train_data = ToUndirected()(train_data)
+del train_data['item', 'rev_rates', 'user'].edge_label  # Remove "reverse" label.
+test_data = ToUndirected()(test_data)
+del test_data['item', 'rev_rates', 'user'].edge_label  # Remove "reverse" label.
 
 print(data)
+print(train_data)
+print(test_data)
