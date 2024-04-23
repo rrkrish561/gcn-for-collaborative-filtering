@@ -4,6 +4,8 @@ Initializes the graph of the Epinions dataset.
 
 import pandas as pd
 from torch_geometric.transforms import ToUndirected
+from torch_geometric.utils import negative_sampling, structured_negative_sampling
+from torch_geometric.sampler import NegativeSampling
 from torch_geometric.data import HeteroData
 import pickle
 import torch
@@ -84,6 +86,27 @@ train_data = ToUndirected()(train_data)
 del train_data['item', 'rev_rates', 'user'].edge_label  # Remove "reverse" label.
 test_data = ToUndirected()(test_data)
 del test_data['item', 'rev_rates', 'user'].edge_label  # Remove "reverse" label.
+
+
+num_users = len(user_mapping)
+num_items = len(item_mapping)
+
+# Add negtive sampling for test data
+neg_edge_list = []
+for user in range(num_users):
+    negative_samples = set()
+    user_neighbors = edge_index[1, edge_index[0] == user]
+    while len(negative_samples) < 100:
+        neg_item = torch.randint(0, num_items, (1,)).item()
+        if neg_item not in user_neighbors:
+            negative_samples.add(neg_item)
+
+    neg_edges = torch.tensor([[user] * 100, list(negative_samples)])
+    neg_edge_list.append(neg_edges)
+
+neg_edge_label_index = torch.cat(neg_edge_list, dim=1)
+test_data['user', 'rates', 'item'].neg_edge_label = torch.zeros(neg_edge_label_index.size(1)).unsqueeze(1)
+test_data['user', 'rates', 'item'].neg_edge_label_index = neg_edge_label_index
 
 print(data)
 print(train_data)
