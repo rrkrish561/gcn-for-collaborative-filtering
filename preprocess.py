@@ -3,7 +3,7 @@ import pandas as pd
 import pickle
 
 def preprocess(data_path, rating_minimum=10, max_lines=None):
-    data = pd.DataFrame(columns=['user', 'item', 'time', 'label'])
+    data = pd.DataFrame(columns=['user', 'item', 'time', 'rating'])
 
     with open(data_path, 'r', encoding="unicode-escape") as f:
         i = 0
@@ -17,8 +17,7 @@ def preprocess(data_path, rating_minimum=10, max_lines=None):
                 continue
             
             try:
-                if float(line[4]) < 3:
-                    continue
+                rating = float(line[4])
             except:
                 continue
             
@@ -26,13 +25,14 @@ def preprocess(data_path, rating_minimum=10, max_lines=None):
             user = line[1]
             rating_time = line[3]
 
+
             # Ignore if time is not an integer
             try:
                 int(rating_time)
             except:
                 continue
 
-            data.loc[len(data)] = [user, item, int(rating_time), 1]
+            data.loc[len(data)] = [user, item, int(rating_time), rating]
 
             i += 1
             if i % 10000 == 0:
@@ -76,39 +76,30 @@ def preprocess(data_path, rating_minimum=10, max_lines=None):
     sparsity = 1 - len(data) / (n_users * n_items)
     print('Sparsity:', sparsity)
 
-    # For each user, get the last item rated, maintaining the original index
-    test = data.groupby('user').tail(1).reset_index()
-    print("Test set size:", len(test))
-    print(test.head(20))
+    # For each user, get last 20% of interactions
+    test_data = pd.DataFrame(columns=['user', 'item', 'time', 'rating'])
+    train_data = pd.DataFrame(columns=['user', 'item', 'time', 'rating'])
+    for user in data['user'].unique():
+        user_data = data[data['user'] == user]
+        split_index = int(0.8 * len(user_data))
+        train_data = pd.concat([train_data, user_data[:split_index]])
+        test_data = pd.concat([test_data, user_data[split_index:]])
 
-    # Remove all indices that are in the test set from the train set
-    train = data[~data.index.isin(test['index'])]
-    print("Number of interactions after removing test set:", len(train))
+    # Split test_data into validation and test
+    validation_data = pd.DataFrame(columns=['user', 'item', 'time', 'rating'])
+    test_data = test_data.sort_values(by=['user', 'time'])
+    for user in test_data['user'].unique():
+        user_data = test_data[test_data['user'] == user]
+        split_index = int(0.5 * len(user_data))
+        validation_data = pd.concat([validation_data, user_data[:split_index]])
+        test_data = test_data.drop(user_data[:split_index].index)
 
-    # Generate 4 random negative samples for each positive sample in the train set
-    negative_samples = pd.DataFrame(columns=['user', 'item', 'time', 'label'])
-    for index, row in train.iterrows():
-        user = row['user']
-        item = row['item']
-        time = row['time']
+    print('Train data:', len(train_data))
+    print('Validation data:', len(validation_data))
+    print('Test data:', len(test_data))
 
-        neg_items = set()
-
-        while len(neg_items) < 4:
-            neg_item = random.choice(list(items-user_to_item[user]))
-            neg_items.add(neg_item)
-        
-        for neg_item in neg_items:
-            negative_samples.loc[len(negative_samples)] = [user, neg_item, time, 0]
-        
-    train = pd.concat([train, negative_samples])
-    # Sort by user and time
-    train = train.sort_values(by=['user', 'time'])
-    print("Train set size after adding negative samples:", len(train))
-    print(train.head(20))
-
-    # Save test set and train set
-    test.to_csv('data/test.csv', index=False)
-    train.to_csv('data/train.csv', index=False)
-
-   
+    # Save data
+    train_data.to_csv('data/train_data.csv', index=False)
+    validation_data.to_csv('data/validation_data.csv', index=False)
+    test_data.to_csv('data/test_data.csv', index=False)
+    
