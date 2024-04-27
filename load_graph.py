@@ -1,5 +1,5 @@
 '''
-Load in the graph data and preprocess for training
+Load in the graph data and preprocess for training. All_data.csv contains all the data from train, validation and test data.
 '''
 
 import pandas as pd
@@ -15,7 +15,6 @@ def create_mapping(path, index_col):
 
 def load_node_csv(path, index_col, encoders=None):
     data = pd.read_csv(path, index_col=index_col)
-    # mapping = {index: i for i, index in enumerate(data.index.unique())}
 
     data = data.reset_index()
     x = None
