@@ -1,3 +1,6 @@
 epinions.txt
 test.csv
 train.csv
+test_data_*.txt
+train_data_*.txt
+validation_data_*.txt

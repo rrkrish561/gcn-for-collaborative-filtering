@@ -99,7 +99,22 @@ def preprocess(data_path, rating_minimum=10, max_lines=None):
     print('Test data:', len(test_data))
 
     # Save data
-    train_data.to_csv('data/train_data.csv', index=False)
-    validation_data.to_csv('data/validation_data.csv', index=False)
-    test_data.to_csv('data/test_data.csv', index=False)
+    train_data.to_csv(f'data/train_data_{rating_minimum}.csv', index=False)
+    validation_data.to_csv(f'data/validation_data_{rating_minimum}.csv', index=False)
+    test_data.to_csv(f'data/test_data_{rating_minimum}.csv', index=False)
     
+    # Count ratings distribution for each dataset
+    print('Train ratings distribution:')
+    print(train_data['rating'].value_counts())
+    print('Validation ratings distribution:')
+    print(validation_data['rating'].value_counts())
+    print('Test ratings distribution:')
+    print(test_data['rating'].value_counts())
+
+    # get percentage of ratings for each dataset
+    print('Train ratings percentage:')
+    print(train_data['rating'].value_counts(normalize=True))
+    print('Validation ratings percentage:')
+    print(validation_data['rating'].value_counts(normalize=True))
+    print('Test ratings percentage:')
+    print(test_data['rating'].value_counts(normalize=True))

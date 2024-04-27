@@ -13,6 +13,7 @@ class NCF(nn.Module):
 
         self.lin1 = nn.Linear(2*embedding_dim, hidden_dim1)
         self.rel1 = nn.ReLU(hidden_dim1)
+        self.drop1 = nn.Dropout(0.5)
         self.lin2 = nn.Linear(hidden_dim1, hidden_dim2)
         self.rel2 = nn.ReLU(hidden_dim2)
         self.outp = nn.Linear(hidden_dim2, 1)
@@ -25,6 +26,7 @@ class NCF(nn.Module):
         x = torch.cat([user, item], dim=1)
         x = self.lin1(x)
         x = self.rel1(x)
+        x = self.drop1(x)
         x = self.lin2(x)
         x = self.rel2(x)
         x = self.outp(x)

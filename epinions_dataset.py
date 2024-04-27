@@ -29,7 +29,7 @@ class EpinionsDataset(Dataset):
     def __getitem__(self, idx):
         user = self.data.iloc[idx]['user']
         item = self.data.iloc[idx]['item']
-        label = self.data.iloc[idx]['label']
+        label = self.data.iloc[idx]['rating']
 
         user_idx = self.user_to_index[user]
         item_idx = self.item_to_index[item]
@@ -43,7 +43,7 @@ class EpinionsDataset(Dataset):
         user_one_hot = torch.FloatTensor(user_one_hot)
         item_one_hot = torch.FloatTensor(item_one_hot)
 
-        return user_one_hot, item_one_hot, label
+        return user_one_hot, item_one_hot, torch.FloatTensor([label])
     
     def item_to_one_hot(self, item):
         item_idx = self.item_to_index[item]
